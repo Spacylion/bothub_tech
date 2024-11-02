@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  username    String       @unique
+  password    String
+  role        UserRole     @default(USER)
+  balance     Float        @default(0)
+  tokens      Token[]      @relation("UserTokens")
+  models      AiModel[]    @relation("UserModels")
+  generations Generation[] @relation("UserGenerations")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Token {
+  id        Int      @id @default(autoincrement())
+  amount    Int
+  user      User     @relation("UserTokens", fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+}
+
+model AiModel {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  tokenCost   Int
+  creditCost  Float
+  users       User[]       @relation("UserModels")
+  generations Generation[] @relation("ModelGenerations")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model Generation {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation("UserGenerations", fields: [userId], references: [id])
+  userId    Int
+  model     AiModel  @relation("ModelGenerations", fields: [modelId], references: [id])
+  modelId   Int
+  input     String
+  output    String?
+  createdAt DateTime @default(now())
+}
