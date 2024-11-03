@@ -1,42 +1,49 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../service/prisma.service';
-import { User } from '@prisma/client';
-
-export interface IUserRepository {
-  createUser(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User>;
-
-  findUserById(id: number): Promise<User | null>;
-
-  findUserByUsername(username: string): Promise<User | null>;
-
-  updateUser(id: number, data: Partial<User>): Promise<User>;
-
-  deleteUser(id: number): Promise<void>;
-}
+import { User, UserRole } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class UserRepository implements IUserRepository {
+export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createUser(
-    data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>,
-  ): Promise<User> {
-    return this.prisma.user.create({ data });
-  }
-
-  async findUserById(id: number): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { id } });
+  async createUser(username: string, password: string): Promise<User> {
+    const hashedPassword = await bcrypt.hash(password, 5);
+    return this.prisma.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        role: UserRole.USER,
+        balance: 0,
+      },
+    });
   }
 
   async findUserByUsername(username: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { username } });
+    return this.prisma.user.findUnique({
+      where: { username },
+    });
   }
 
-  async updateUser(id: number, data: Partial<User>): Promise<User> {
-    return this.prisma.user.update({ where: { id }, data });
+  async validateUser(username: string, password: string): Promise<User | null> {
+    const user = await this.findUserByUsername(username);
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return user;
+    }
+    return null;
   }
 
-  async deleteUser(id: number): Promise<void> {
-    await this.prisma.user.delete({ where: { id } });
+  async updateUserRole(userId: number, role: UserRole): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+  }
+
+  async updateBalance(userId: number, amount: number): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { balance: { increment: amount } },
+    });
   }
 }

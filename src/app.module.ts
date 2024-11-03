@@ -15,11 +15,11 @@ const logger = new Logger('ConfigModule');
       validationSchema: configurationValidationSchema,
       load: [
         () => {
-          const envVars = process.env; // Access environment variables
+          const envVars = process.env;
           logger.log(
             `Loaded environment variables for ${process.env.NODE_ENV || 'development'}: ${JSON.stringify(envVars, null, 2)}`,
           );
-          return envVars; // Return the loaded env variables
+          return envVars;
         },
       ],
     }),
