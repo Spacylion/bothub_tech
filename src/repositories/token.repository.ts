@@ -1,6 +1,6 @@
 import { Token } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../service/prisma.service';
+import { PrismaService } from '../services/prisma.service';
 
 export interface ITokenRepository {
   createToken(data: Omit<Token, 'id' | 'createdAt'>): Promise<Token>;

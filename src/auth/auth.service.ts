@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../db/service/users.service';
+import { UsersService } from '../services/users.service';
 import { User } from '@prisma/client';
 
 @Injectable()

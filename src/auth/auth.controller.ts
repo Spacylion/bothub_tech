@@ -9,12 +9,12 @@ import {
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { ATTEMPTS_LIMIT, TTL_RATE_LIMIT_IN_MSEC } from '../../shared/constants';
+import { ATTEMPTS_LIMIT, TTL_RATE_LIMIT_IN_MSEC } from '../shared/constants';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger(this.constructor.name);
+  private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
 
@@ -36,19 +36,12 @@ export class AuthController {
     },
   })
   @Post('register')
-  async register(@Body() body: { username: string; password: string }) {
-    try {
-      return await this.authService.register(body.username, body.password);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
-        throw new HttpException(
-          'Internal server error',
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-    }
+  async register(
+    @Body() { username, password }: { username: string; password: string },
+  ) {
+    return this.handleAuthOperation(async () => {
+      return await this.authService.register(username, password);
+    });
   }
 
   @Throttle({ default: { limit: ATTEMPTS_LIMIT, ttl: TTL_RATE_LIMIT_IN_MSEC } })
@@ -73,14 +66,31 @@ export class AuthController {
     status: 429,
     description: 'Too many requests, please try again later',
   })
-  async login(@Body() body: { username: string; password: string }) {
-    console.log('Login attempt:', body);
-    const token = await this.authService.login(body.username, body.password);
-    if (!token) {
-      console.log('Invalid credentials');
-      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+  async login(
+    @Body() { username, password }: { username: string; password: string },
+  ) {
+    this.logger.debug('Login attempt:', { username });
+    return this.handleAuthOperation(async () => {
+      const token = await this.authService.login(username, password);
+      if (!token) {
+        throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+      }
+      return token;
+    });
+  }
+
+  private async handleAuthOperation(operation: () => Promise<any>) {
+    try {
+      return await operation();
+    } catch (error) {
+      this.logger.error('Error during authentication operation', error);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    console.log('Generated token:', token);
-    return token;
   }
 }
