@@ -1,6 +1,6 @@
 import { Generation } from '@prisma/client';
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../service/prisma.service";
+import { PrismaService } from "../services/prisma.service";
 
 export interface IGenerationRepository {
   createGeneration(

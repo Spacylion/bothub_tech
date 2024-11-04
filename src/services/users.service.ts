@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { compare } from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -12,7 +13,10 @@ export class UsersService {
     if (existingUser) {
       throw new HttpException('Username already taken', HttpStatus.BAD_REQUEST);
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.validatePassword(password);
+
+    const hashedPassword = await bcrypt.hash(password, 5);
     return this.prisma.user.create({
       data: {
         username,
@@ -30,8 +34,10 @@ export class UsersService {
   }
 
   async validateUser(username: string, password: string): Promise<User | null> {
-    const user = await this.findUserByUsername(username);
-    if (user && (await bcrypt.compare(password, user.password))) {
+    const user = (await this.prisma.user.findUnique({
+      where: { username },
+    })) as User;
+    if (user && (await compare(password, user.password))) {
       return user;
     }
     return null;
@@ -49,5 +55,24 @@ export class UsersService {
       where: { id: userId },
       data: { balance: { increment: amount } },
     });
+  }
+
+  private async validatePassword(password: string) {
+    const minLength = 6;
+    const specialCharacterRegex = /[!@#$%^&*(),.?":{}|<>]/;
+
+    if (password.length < minLength) {
+      throw new HttpException(
+        'Password must be at least 6 characters long',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!specialCharacterRegex.test(password)) {
+      throw new HttpException(
+        'Password must contain at least one special character',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }

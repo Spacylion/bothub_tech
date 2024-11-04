@@ -1,0 +1,21 @@
+name: Protect Production Branch
+
+on:
+  pull_request:
+    branches:
+      - production
+
+jobs:
+  restrict-merging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch
+        if: github.base_ref == 'production' && github.head_ref != 'main'
+        run: |
+          echo "Pull requests to production are only allowed from the main branch."
+          exit 1
+      - name: Block merges from production to other branches
+        if: github.base_ref != 'production' && github.head_ref == 'production'
+        run: |
+          echo "Merging from production to other branches is not allowed."
+          exit 1

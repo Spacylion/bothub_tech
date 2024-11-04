@@ -5,8 +5,8 @@ import { JwtStrategy } from './guards/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersService } from '../db/service/users.service';
-import { PrismaModule } from '../db/service/prisma.module';
+import { UsersService } from '../services/users.service';
+import { PrismaModule } from '../database/prisma.module';
 
 @Module({
   imports: [
