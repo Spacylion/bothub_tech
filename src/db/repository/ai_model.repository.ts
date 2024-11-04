@@ -1,6 +1,6 @@
 import { AiModel } from '@prisma/client';
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../service/prisma.service";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../service/prisma.service';
 
 export interface IAiModelRepository {
   createAiModel(

@@ -1,11 +1,12 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { configurationValidationSchema } from './config/configuration';
 import { RepositoriesModule } from './db/repository/repositories.module';
-
-const logger = new Logger('ConfigModule');
+import { UsersService } from './db/service/users.service';
+import { AuthModule } from './auth/auth.module';
+import { PrismaService } from './db/service/prisma.service';
 
 @Module({
   imports: [
@@ -13,19 +14,11 @@ const logger = new Logger('ConfigModule');
       isGlobal: true,
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
       validationSchema: configurationValidationSchema,
-      load: [
-        () => {
-          const envVars = process.env;
-          logger.log(
-            `Loaded environment variables for ${process.env.NODE_ENV || 'development'}: ${JSON.stringify(envVars, null, 2)}`,
-          );
-          return envVars;
-        },
-      ],
     }),
     RepositoriesModule,
+    AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, UsersService, PrismaService],
 })
 export class AppModule {}
