@@ -1,8 +1,30 @@
-import { Controller, Get, Logger, UseGuards } from '@nestjs/common';
-import { ApiResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  HttpException,
+  HttpStatus,
+  Logger,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiOperation,
+  ApiProperty,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AiModelService } from './aiModel.service';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
-import { PlanCosts } from '../shared/enums';
+
+class SwitchModelDto {
+  @ApiProperty({
+    description:
+      'The ID of the model to switch to (e.g., 1 for gpt-3.5, 2 for gpt-4, 3 for mistral).',
+  })
+  modelId!: number | null;
+}
 
 @ApiTags('ai-model')
 @Controller('ai-model')
@@ -12,15 +34,25 @@ export class AiModelController {
   constructor(private readonly aiModelService: AiModelService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get('costs')
+  @Post('switch')
+  @ApiOperation({ summary: 'Choose AI model' })
   @ApiResponse({
     status: 200,
-    description: 'Successfully retrieved plan costs.',
+    description: 'Successfully switched model.',
     type: Object,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized access.' })
-  getPlanCosts() {
-    this.logger.log('Retrieving plan costs');
-    return PlanCosts;
+  async switchModel(@Req() req: any, @Body() switchModelDto: SwitchModelDto) {
+    const { modelId } = switchModelDto;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new HttpException(
+        'User ID cannot be undefined or null',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    this.logger.log(`User ${userId} is switching to model ID ${modelId}`);
+    return await this.aiModelService.switchModel(userId, modelId);
   }
 }

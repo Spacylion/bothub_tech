@@ -8,45 +8,26 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  username  String    @unique
-  password  String
-  role      UserRole  @default(USER)
-  balance   Float     @default(0)
-  tokens    Token[]   @relation("UserTokens")
-  models    AiModel[] @relation("UserModels")
-  plan      Plan?     @relation("UserPlans", fields: [planId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  planId    Int?
-}
-
-model Plan {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
-  tokenCost  Int
-  creditCost Float
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  users      User[]   @relation("UserPlans")
-}
-
-model Token {
-  id        Int      @id @default(autoincrement())
-  amount    Int
-  user      User     @relation("UserTokens", fields: [userId], references: [id])
-  userId    Int
-  createdAt DateTime @default(now())
+  id              Int       @id @default(autoincrement())
+  username        String    @unique
+  password        String
+  balance         Int       @default(10000)
+  role            UserRole  @default(USER)
+  selectedModel   AiModel?  @relation(fields: [selectedModelId], references: [id])
+  selectedModelId Int?
+  models          AiModel[] @relation("UserModels")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model AiModel {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
-  tokenCost  Int
-  creditCost Float
-  users      User[]   @relation("UserModels")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  tokenCost Int
+  users     User[]   @relation("UserModels")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User[]
 }
 
 enum UserRole {

@@ -6,32 +6,9 @@ import { PrismaService } from '../prisma.service';
 export class AiModelRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createAiModel(name: string, tokenCost: number, creditCost: number) {
-    return this.prisma.aiModel.create({
-      data: { name, tokenCost, creditCost },
-    });
-  }
-
-  async findAiModelById(id: number) {
+  async findAiModelByName(modelId: number): Promise<AiModel | null> {
     return this.prisma.aiModel.findUnique({
-      where: { id },
+      where: { id: modelId },
     });
-  }
-
-  async updateAiModel(id: number, data: Partial<AiModel>) {
-    return this.prisma.aiModel.update({
-      where: { id },
-      data,
-    });
-  }
-
-  async deleteAiModel(id: number) {
-    return this.prisma.aiModel.delete({
-      where: { id },
-    });
-  }
-
-  async getAllAiModels() {
-    return this.prisma.aiModel.findMany();
   }
 }

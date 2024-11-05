@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
-import { UserRepository } from '../database/repositories/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../database/services/user.service';
 
