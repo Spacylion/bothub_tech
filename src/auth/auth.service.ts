@@ -1,11 +1,11 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { UsersService } from '../database/services/user.service';
 
 @Injectable()
 export class AuthService {
-  private blacklistedTokens: Set<string> = new Set();
+  private readonly logger = new Logger(this.constructor.name);
 
   constructor(
     private readonly usersService: UsersService,
@@ -28,16 +28,10 @@ export class AuthService {
       throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
     }
     const payload = { username: user.username, sub: user.id };
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
     };
-  }
-
-  async logout(token: string): Promise<void> {
-    this.blacklistedTokens.add(token);
-  }
-
-  isTokenBlacklisted(token: string): boolean {
-    return this.blacklistedTokens.has(token);
   }
 }

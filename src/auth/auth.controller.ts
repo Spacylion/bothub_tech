@@ -5,18 +5,28 @@ import {
   HttpStatus,
   Logger,
   Post,
+  Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
+
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ATTEMPTS_LIMIT, TTL_RATE_LIMIT_IN_MSEC } from '../shared/constants';
+import { JwtService } from '@nestjs/jwt';
+import { JwtAuthGuard } from './guards/jwtAuth.guard';
+import { Response } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
+  private readonly logger = new Logger(this.constructor.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered.' })
@@ -39,9 +49,7 @@ export class AuthController {
   async register(
     @Body() { username, password }: { username: string; password: string },
   ) {
-    return this.handleAuthOperation(async () => {
-      return await this.authService.register(username, password);
-    });
+    return this.authService.register(username, password);
   }
 
   @Throttle({ default: { limit: ATTEMPTS_LIMIT, ttl: TTL_RATE_LIMIT_IN_MSEC } })
@@ -50,6 +58,12 @@ export class AuthController {
     description: `Limits: ${ATTEMPTS_LIMIT} requests per ${TTL_RATE_LIMIT_IN_MSEC / 1000} seconds`,
   })
   @Post('login')
+  @ApiResponse({ status: 200, description: 'Successfully logged in' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests, please try again later',
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -60,54 +74,34 @@ export class AuthController {
       required: ['username', 'password'],
     },
   })
-  @ApiResponse({ status: 200, description: 'Successfully logged in' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({
-    status: 429,
-    description: 'Too many requests, please try again later',
-  })
   async login(
     @Body() { username, password }: { username: string; password: string },
+    @Res({ passthrough: true }) res: Response,
   ) {
-    this.logger.debug('Login attempt:', { username });
-    return this.handleAuthOperation(async () => {
-      const token = await this.authService.login(username, password);
-      if (!token) {
-        throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-      }
-      return token;
+    const { access_token } = await this.authService.login(username, password);
+    if (!access_token) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+    this.logger.debug('Token generated:', access_token);
+
+    res.cookie('jwt', access_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    });
+
+    res.status(200).send({
+      message: 'Successfully logged in',
+      access_token: access_token,
     });
   }
 
-  @ApiOperation({ summary: 'User logout' })
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
-  @ApiResponse({ status: 200, description: 'Successfully logged out' })
-  @ApiResponse({ status: 400, description: 'Token is required for logout' })
-  async logout(@Body() { token }: { token?: string }) {
-    if (!token) {
-      throw new HttpException(
-        'Token is required for logout',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    return this.handleAuthOperation(async () => {
-      await this.authService.logout(token);
-      return { message: 'Successfully logged out' };
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    res.clearCookie('jwt');
+    res.status(200).send({
+      message: 'Successfully logged out',
     });
-  }
-
-  private async handleAuthOperation(operation: () => Promise<any>) {
-    try {
-      return await operation();
-    } catch (error) {
-      this.logger.error('Error during authentication operation', error);
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
   }
 }
