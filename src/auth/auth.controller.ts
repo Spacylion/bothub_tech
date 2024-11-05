@@ -79,6 +79,23 @@ export class AuthController {
     });
   }
 
+  @ApiOperation({ summary: 'User logout' })
+  @Post('logout')
+  @ApiResponse({ status: 200, description: 'Successfully logged out' })
+  @ApiResponse({ status: 400, description: 'Token is required for logout' })
+  async logout(@Body() { token }: { token?: string }) {
+    if (!token) {
+      throw new HttpException(
+        'Token is required for logout',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.handleAuthOperation(async () => {
+      await this.authService.logout(token);
+      return { message: 'Successfully logged out' };
+    });
+  }
+
   private async handleAuthOperation(operation: () => Promise<any>) {
     try {
       return await operation();

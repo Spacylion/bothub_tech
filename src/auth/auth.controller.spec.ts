@@ -37,6 +37,7 @@ describe('AuthController', () => {
         balance: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
+        planId: null, // Add this line
       };
       jest.spyOn(authService, 'register').mockResolvedValue(expectedResponse);
 

@@ -1,10 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../services/users.service';
 import { User } from '@prisma/client';
+import { UsersService } from '../database/services/user.service';
 
 @Injectable()
 export class AuthService {
+  private blacklistedTokens: Set<string> = new Set();
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -29,5 +31,13 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
     };
+  }
+
+  async logout(token: string): Promise<void> {
+    this.blacklistedTokens.add(token);
+  }
+
+  isTokenBlacklisted(token: string): boolean {
+    return this.blacklistedTokens.has(token);
   }
 }

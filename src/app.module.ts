@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { configurationValidationSchema } from './config/configuration';
-import { RepositoriesModule } from './database/repositories.module';
-import { UsersService } from './services/users.service';
+import { RepositoriesModule } from './database/repositories/repositories.module';
+import { UserRepository } from './database/repositories/user.repository';
 import { AuthModule } from './auth/auth.module';
-import { PrismaService } from './services/prisma.service';
+import { PrismaService } from './database/prisma.service';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -26,7 +26,7 @@ import { APP_GUARD } from '@nestjs/core';
   ],
   controllers: [],
   providers: [
-    UsersService,
+    UserRepository,
     PrismaService,
     {
       provide: APP_GUARD,
