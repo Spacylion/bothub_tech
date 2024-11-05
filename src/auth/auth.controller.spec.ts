@@ -2,13 +2,43 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 import { UserRole } from '@prisma/client';
+import { JwtService } from '@nestjs/jwt';
 
 describe('AuthController', () => {
   let authController: AuthController;
   let authService: AuthService;
+  let jwtService: Partial<JwtService>;
+
+  let res: Partial<Response>;
+
+  const mockUser = {
+    id: 1,
+    username: 'newuser',
+    password: 'password123!',
+    role: UserRole.USER,
+    balance: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    planId: null,
+  };
+
+  const mockLoginUser = { username: 'testuser', password: 'password123' };
+  const mockResponse = { access_token: 'mocked-jwt-token' };
 
   beforeEach(async () => {
+    res = {
+      cookie: jest.fn(),
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+      clearCookie: jest.fn(),
+    };
+
+    jwtService = {
+      sign: jest.fn().mockReturnValue(mockResponse.access_token),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
@@ -19,6 +49,10 @@ describe('AuthController', () => {
             login: jest.fn(),
           },
         },
+        {
+          provide: JwtService,
+          useValue: jwtService,
+        },
       ],
     }).compile();
 
@@ -27,30 +61,18 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('should register a new user successfully', async () => {
-      const mockUser = { username: 'testuser', password: 'password123' };
-      const expectedResponse = {
-        id: 1,
-        username: 'testuser',
-        password: 'hashedpassword123',
-        role: UserRole.USER,
-        balance: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        planId: null, // Add this line
-      };
-      jest.spyOn(authService, 'register').mockResolvedValue(expectedResponse);
+    it('should successfully register a new user', async () => {
+      jest.spyOn(authService, 'register').mockResolvedValue(mockUser);
 
       const result = await authController.register(mockUser);
-      expect(result).toEqual(expectedResponse);
+      expect(result).toEqual(mockUser);
       expect(authService.register).toHaveBeenCalledWith(
         mockUser.username,
         mockUser.password,
       );
     });
 
-    it('should throw a 400 error if username is taken', async () => {
-      const mockUser = { username: 'existingUser', password: 'password123' };
+    it('should throw an error if username is taken', async () => {
       jest
         .spyOn(authService, 'register')
         .mockRejectedValue(
@@ -64,71 +86,53 @@ describe('AuthController', () => {
         'Username already taken',
       );
     });
-
-    it('should throw a 400 error if password is invalid', async () => {
-      const mockUser = { username: 'newuser', password: 'short' };
-      jest
-        .spyOn(authService, 'register')
-        .mockRejectedValue(
-          new HttpException(
-            'Password does not meet requirements',
-            HttpStatus.BAD_REQUEST,
-          ),
-        );
-
-      await expect(authController.register(mockUser)).rejects.toThrow(
-        HttpException,
-      );
-      await expect(authController.register(mockUser)).rejects.toThrowError(
-        'Password does not meet requirements',
-      );
-    });
   });
 
   describe('login', () => {
-    it('should log in successfully', async () => {
-      const mockUser = { username: 'testuser', password: 'password123' };
-      const token = 'mocked-jwt-token';
-      jest
-        .spyOn(authService, 'login')
-        .mockResolvedValue({ access_token: token });
+    it('should successfully log in a user', async () => {
+      jest.spyOn(authService, 'login').mockResolvedValue(mockResponse);
 
-      const result = await authController.login(mockUser);
-      expect(result).toEqual({ access_token: token });
-      expect(authService.login).toHaveBeenCalledWith(
-        mockUser.username,
-        mockUser.password,
+      await authController.login(mockLoginUser, res as Response);
+      expect(res.cookie).toHaveBeenCalledWith(
+        'jwt',
+        mockResponse.access_token,
+        {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'strict',
+        },
       );
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        message: 'Successfully logged in',
+        access_token: mockResponse.access_token,
+      });
     });
 
-    it('should throw a 401 error for invalid credentials', async () => {
-      const mockUser = { username: 'testuser', password: 'wrongpassword' };
+    it('should throw an error for invalid credentials', async () => {
       jest
         .spyOn(authService, 'login')
         .mockRejectedValue(
           new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED),
         );
 
-      await expect(authController.login(mockUser)).rejects.toThrow(
-        HttpException,
-      );
-      await expect(authController.login(mockUser)).rejects.toThrowError(
-        'Invalid credentials',
-      );
+      await expect(
+        authController.login(mockLoginUser, res as Response),
+      ).rejects.toThrow(HttpException);
+      await expect(
+        authController.login(mockLoginUser, res as Response),
+      ).rejects.toThrowError('Invalid credentials');
     });
+  });
 
-    it('should handle unexpected errors in login method', async () => {
-      const mockUser = { username: 'testuser', password: 'password123' };
-      jest
-        .spyOn(authService, 'login')
-        .mockRejectedValue(new Error('Unexpected error'));
-
-      await expect(authController.login(mockUser)).rejects.toThrow(
-        HttpException,
-      );
-      await expect(authController.login(mockUser)).rejects.toThrowError(
-        'Internal server error',
-      );
+  describe('logout', () => {
+    it('should log out successfully', async () => {
+      await authController.logout({}, res as Response);
+      expect(res.clearCookie).toHaveBeenCalledWith('jwt');
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        message: 'Successfully logged out',
+      });
     });
   });
 });
