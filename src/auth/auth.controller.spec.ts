@@ -10,15 +10,15 @@ describe('AuthController', () => {
   let authController: AuthController;
   let authService: AuthService;
   let jwtService: Partial<JwtService>;
-
   let res: Partial<Response>;
 
   const mockUser = {
     id: 1,
     username: 'newuser',
     password: 'password123!',
-    role: UserRole.USER,
     balance: 0,
+    role: UserRole.USER,
+    selectedModelId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     planId: null,

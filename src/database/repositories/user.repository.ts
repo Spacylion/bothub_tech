@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { User, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
-import { Plan } from "../../shared/enums";
 
 @Injectable()
 export class UserRepository {
@@ -19,15 +18,8 @@ export class UserRepository {
         username,
         password: hashedPassword,
         role: UserRole.USER,
-        balance: 10000,
-        tokens: {
-          create: { amount: 10000 },
-        },
-        plan: {
-          connect: { name: Plan.FREE },
-        },
+        selectedModelId: null,
       },
-      include: { tokens: true, plan: true },
     });
     return user;
   }
@@ -39,10 +31,23 @@ export class UserRepository {
     });
   }
 
-  async updateBalance(userId: number, amount: number): Promise<User> {
-    return this.prisma.user.update({
+  async findUserById(userId: number): Promise<User | null> {
+    if (!userId) {
+      throw new Error('User ID cannot be undefined or null');
+    }
+
+    return this.prisma.user.findUnique({
       where: { id: userId },
-      data: { balance: { increment: amount } },
+      include: { models: true },
+    });
+  }
+
+  async updateUserModel(userId: number, modelId: number | null): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        selectedModelId: modelId,
+      },
     });
   }
 }
