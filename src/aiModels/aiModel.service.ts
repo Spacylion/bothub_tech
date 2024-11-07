@@ -12,17 +12,17 @@ export class AiModelService {
 
   async switchModel(
     userId: number,
-    modelId: number | null,
+    modelName: string | null,
   ): Promise<{ message: string }> {
     const user = await this.usersService.findUserById(userId);
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-    if (modelId === null) {
+    if (modelName === null) {
       await this.usersService.updateUserModel(userId, null);
       return { message: 'Successfully removed model selection' };
     }
-    const model = await this.aiModelRepository.findAiModelByName(modelId);
+    const model = await this.aiModelRepository.findAiModelByName(modelName);
     if (!model) {
       throw new HttpException('Model not found', HttpStatus.NOT_FOUND);
     }
@@ -39,6 +39,6 @@ export class AiModelService {
   }
 
   async findAiModelById(modelId: number): Promise<AiModel | null> {
-    return this.aiModelRepository.findAiModelByName(modelId);
+    return this.aiModelRepository.findAiModelById(modelId);
   }
 }

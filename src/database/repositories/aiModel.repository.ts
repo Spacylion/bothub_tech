@@ -6,9 +6,15 @@ import { PrismaService } from '../prisma.service';
 export class AiModelRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAiModelByName(modelId: number): Promise<AiModel | null> {
+  async findAiModelById(modelId: number): Promise<AiModel | null> {
     return this.prisma.aiModel.findUnique({
       where: { id: modelId },
+    });
+  }
+
+  async findAiModelByName(modelName: string): Promise<AiModel | null> {
+    return this.prisma.aiModel.findUnique({
+      where: { name: modelName },
     });
   }
 }

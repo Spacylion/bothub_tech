@@ -1,11 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Model } from '../../shared/enums';
+import { IsEnum, IsOptional } from 'class-validator';
 
 export class SwitchModelDto {
   @ApiProperty({
-    description:
-      'The ID of the model to switch to (e.g., 1 for gpt-3.5, 2 for gpt-4, 3 for mistral).',
+    description: 'The name of the AI model to switch to.',
+    enum: Model,
+    enumName: 'Model',
+    required: false,
   })
-  modelId!: number | null;
+  @IsEnum(Model)
+  @IsOptional()
+  modelName?: Model | null;
 }
 
 export class PostRequestDto {

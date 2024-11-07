@@ -16,8 +16,6 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "migrate:dev": "dotenv -e .env.development -- npx prisma migrate dev --name init",
     "migrate:prod": "dotenv -e .env.production -- cross-env NODE_ENV=production npx prisma migrate deploy",
-    "seed-plan:dev": "dotenv -e .env.development ts-node prisma/seed-plan.ts",
-    "seed-plan:prod": "dotenv -e .env.production -- cross-env NODE_ENV=production ts-node prisma/seed-plan.ts",
     "seed-ai-model:dev": "dotenv -e .env.development ts-node prisma/seed-ai-model.ts",
     "seed-ai-model:prod": "dotenv -e .env.production -- cross-env NODE_ENV=production ts-node prisma/seed-ai-model.ts",
     "test": "dotenv -e .env.sample -- jest",
