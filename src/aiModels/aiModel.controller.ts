@@ -10,30 +10,15 @@ import {
 } from '@nestjs/common';
 import {
   ApiOperation,
-  ApiProperty,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AiModelService } from './aiModel.service';
-import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from '../database/services/user.service';
 import { User } from '@prisma/client';
-
-class SwitchModelDto {
-  @ApiProperty({
-    description:
-      'The ID of the model to switch to (e.g., 1 for gpt-3.5, 2 for gpt-4, 3 for mistral).',
-  })
-  modelId!: number | null;
-}
-
-class PostRequestDto {
-  @ApiProperty({
-    description: 'The prompt to send to the AI model.',
-  })
-  prompt!: string;
-}
+import { PostRequestDto, SwitchModelDto } from './dto/aiModel.dto';
 
 @ApiTags('ai-model')
 @Controller('ai-model')
@@ -82,18 +67,13 @@ export class AiModelController {
   ) {
     const { prompt } = postRequestDto;
     const userId = req.user.id;
-
     const user: User = await this.usersService.findUserById(userId);
-
-    // Проверяем, что selectedModelId не равен null
     if (user.selectedModelId === null) {
       throw new HttpException('No model selected', HttpStatus.BAD_REQUEST);
     }
-
     const model = await this.aiModelService.findAiModelById(
       user.selectedModelId,
     );
-
     if (!model) {
       throw new HttpException('AI model not found', HttpStatus.NOT_FOUND);
     }
@@ -101,9 +81,7 @@ export class AiModelController {
     if (user.balance < model.tokenCost) {
       throw new HttpException('Insufficient balance', HttpStatus.FORBIDDEN);
     }
-
     const result = await this.aiModelService.processPrompt(model, prompt);
-
     await this.usersService.updateUserBalance(
       userId,
       user.balance - model.tokenCost,

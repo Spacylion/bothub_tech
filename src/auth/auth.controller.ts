@@ -15,7 +15,7 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ATTEMPTS_LIMIT, TTL_RATE_LIMIT_IN_MSEC } from '../shared/constants';
 import { JwtService } from '@nestjs/jwt';
-import { JwtAuthGuard } from './guards/jwtAuth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Response } from 'express';
 
 @ApiTags('auth')
