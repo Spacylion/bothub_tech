@@ -3,3 +3,8 @@ export const AiModels = {
   GPT_4: 'gpt-4',
   MISTRAL: 'mistral',
 };
+
+export const userRoles = {
+  USER: 'USER',
+  ADMIN: 'ADMIN',
+};

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { User, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 
@@ -31,15 +31,20 @@ export class UserRepository {
     });
   }
 
-  async findUserById(userId: number): Promise<User | null> {
+  async findUserById(userId: number): Promise<User> {
     if (!userId) {
       throw new Error('User ID cannot be undefined or null');
     }
-
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { models: true },
     });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user as User;
   }
 
   async updateUserModel(userId: number, modelId: number | null): Promise<void> {
@@ -48,6 +53,13 @@ export class UserRepository {
       data: {
         selectedModelId: modelId,
       },
+    });
+  }
+
+  async updateUserBalance(userId: number, newBalance: number): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { balance: newBalance },
     });
   }
 }

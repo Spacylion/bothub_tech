@@ -10,6 +10,10 @@ import { AiModelController } from './aiModels/aiModel.controller';
 import { AiModelService } from './aiModels/aiModel.service';
 import { UsersService } from './database/services/user.service';
 import { UserRepository } from './database/repositories/user.repository';
+import { AiModelModule } from './aiModels/aiModel.module';
+import { ProfileModule } from './profile/profile.module';
+import { ProfileService } from './profile/profile.service';
+import { ProfileController } from './profile/profile.controller';
 
 @Module({
   imports: [
@@ -27,12 +31,15 @@ import { UserRepository } from './database/repositories/user.repository';
     RepositoriesModule,
     AuthModule,
   ],
-  controllers: [AiModelController],
+  controllers: [AiModelController, ProfileController],
   providers: [
     UsersService,
     PrismaService,
     AiModelService,
+    AiModelModule,
     UserRepository,
+    ProfileModule,
+    ProfileService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

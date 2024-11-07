@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { AiModelRepository } from '../database/repositories/aiModel.repository';
 import { UsersService } from '../database/services/user.service';
+import { AiModel } from '@prisma/client';
 
 @Injectable()
 export class AiModelService {
@@ -31,5 +32,13 @@ export class AiModelService {
     }
     await this.usersService.updateUserModel(userId, model.id);
     return { message: `Successfully switched to model ${model.name}` };
+  }
+
+  async processPrompt(model: AiModel, prompt: string): Promise<string> {
+    return `Response to "${prompt}" from model ${model.name}`;
+  }
+
+  async findAiModelById(modelId: number): Promise<AiModel | null> {
+    return this.aiModelRepository.findAiModelByName(modelId);
   }
 }
