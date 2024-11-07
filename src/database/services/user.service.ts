@@ -46,11 +46,15 @@ export class UsersService {
     }
   }
 
-  async findUserById(userId: number): Promise<User | null> {
+  async findUserById(userId: number): Promise<User> {
     return this.userRepository.findUserById(userId);
   }
 
   async updateUserModel(userId: number, modelId: number | null): Promise<void> {
     await this.userRepository.updateUserModel(userId, modelId);
+  }
+
+  async updateUserBalance(userId: number, newBalance: number) {
+    return this.userRepository.updateUserBalance(userId, newBalance);
   }
 }
