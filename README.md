@@ -23,3 +23,10 @@
 ## Useful Links
 - [API Documentation](https://bothubtech-production.up.railway.app/api)
 
+
+
+# To run project:
+> npm i
+
+
+> npm run start:dev
