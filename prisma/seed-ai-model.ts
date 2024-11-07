@@ -1,13 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import * as process from 'node:process';
+import { Model } from '../src/shared/enums';
 
 const prisma = new PrismaClient();
 
 async function main() {
   const aiModels = [
-    { name: 'GPT-3.5', tokenCost: 10 },
-    { name: 'Mistral', tokenCost: 20 },
-    { name: 'GPT-4', tokenCost: 30 },
+    { name: Model.GPT_3_5_TURBO, tokenCost: 10 },
+    { name: Model.GPT_4O_MINI, tokenCost: 15 },
+    { name: Model.O1_PREVIEW, tokenCost: 20 },
+    { name: Model.O1_MINI, tokenCost: 25 },
+    { name: Model.GPT_4_TURBO, tokenCost: 30 },
+    { name: Model.GPT_4, tokenCost: 35 },
+    { name: Model.GPT_3_5_TURBO, tokenCost: 40 },
   ];
 
   for (const model of aiModels) {

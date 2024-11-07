@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { configurationValidationSchema } from './config/configuration';
+import configuration, {
+  configurationValidationSchema,
+} from './config/configuration';
 import { RepositoriesModule } from './database/repositories/repositories.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaService } from './database/prisma.service';
@@ -14,11 +16,13 @@ import { AiModelModule } from './aiModels/aiModel.module';
 import { ProfileModule } from './profile/profile.module';
 import { ProfileService } from './profile/profile.service';
 import { ProfileController } from './profile/profile.controller';
+import { BothubService } from './bothub/bothub.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [configuration],
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
       validationSchema: configurationValidationSchema,
     }),
@@ -34,6 +38,7 @@ import { ProfileController } from './profile/profile.controller';
   controllers: [AiModelController, ProfileController],
   providers: [
     UsersService,
+    BothubService,
     PrismaService,
     AiModelService,
     AiModelModule,
