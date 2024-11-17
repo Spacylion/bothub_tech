@@ -1,4 +1,8 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { compare } from 'bcrypt';
@@ -11,7 +15,7 @@ export class UsersService {
   async createUser(username: string, password: string): Promise<User> {
     const existingUser = await this.userRepository.findUserByUsername(username);
     if (existingUser) {
-      throw new HttpException('Username already taken', HttpStatus.BAD_REQUEST);
+      throw new BadRequestException('Username already taken');
     }
 
     await this.validatePassword(password);
@@ -21,6 +25,9 @@ export class UsersService {
 
   async validateUser(username: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findUserByUsername(username);
+    if (!user) {
+      throw new NotFoundException(`User with Username ${username} not found`);
+    }
     if (user && (await compare(password, user.password))) {
       return user;
     }
@@ -32,16 +39,14 @@ export class UsersService {
     const specialCharacterRegex = /[!@#$%^&*(),.?":{}|<>]/;
 
     if (password.length < minLength) {
-      throw new HttpException(
+      throw new BadRequestException(
         'Password must be at least 6 characters long',
-        HttpStatus.BAD_REQUEST,
       );
     }
 
     if (!specialCharacterRegex.test(password)) {
-      throw new HttpException(
+      throw new BadRequestException(
         'Password must contain at least one special character',
-        HttpStatus.BAD_REQUEST,
       );
     }
   }
